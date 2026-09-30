@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizVerse 2.0</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#10152b,#171b3d);color:#fff;min-height:100vh}
+button{font:inherit;cursor:pointer;border:0}.app{max-width:1100px;margin:auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:16px 20px;background:#202650;border:1px solid #343c70;border-radius:18px;position:sticky;top:10px;z-index:5}
+.logo{font-size:25px;font-weight:800}.logo span{color:#7c6cff}.stats{display:flex;gap:10px;flex-wrap:wrap}.pill{background:#151a35;border:1px solid #39416e;padding:8px 12px;border-radius:999px}
+.screen{margin-top:22px;background:#1b2145;border:1px solid #353d70;border-radius:22px;padding:24px;box-shadow:0 15px 40px #0004}
+h1,h2,h3{margin-top:0}.muted{color:#aeb6db}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.card{background:#242b55;border:1px solid #3b4477;border-radius:16px;padding:18px;transition:.2s}.card:hover{transform:translateY(-3px);border-color:#8074ff}
+.cat{min-height:125px;text-align:left;color:white}.cat b{display:block;font-size:18px;margin:8px 0}.cat small{color:#aeb6db}
+.primary{background:#7164ff;color:white;padding:12px 18px;border-radius:12px;font-weight:700}.secondary{background:#30375f;color:#fff;padding:11px 16px;border-radius:12px}.danger{background:#8e3650;color:#fff;padding:11px 16px;border-radius:12px}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.answer{background:#2a315e;color:#fff;padding:16px;border-radius:13px;border:2px solid transparent;text-align:left}.answer:hover{border-color:#8277ff}.correct{background:#185b48!important;border-color:#42d6a0!important}.wrong{background:#6a3040!important;border-color:#ff718d!important}.disabled{pointer-events:none;opacity:.75}
+.bar{height:10px;background:#30375f;border-radius:99px;overflow:hidden}.fill{height:100%;background:#7569ff;width:0;transition:.3s}
+.shop{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.shop .card{display:flex;flex-direction:column;gap:10px}.shop button{margin-top:auto}
+.profilebox{display:grid;grid-template-columns:180px 1fr;gap:20px;align-items:center}.avatar{width:140px;height:140px;border-radius:50%;background:#7164ff;display:grid;place-items:center;font-size:58px;margin:auto}
+.big{font-size:42px;font-weight:800}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#30375f;margin:3px}
+.notice{padding:14px;border-radius:13px;background:#252d58;border:1px solid #3b4477;margin:12px 0}.achievement{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.hidden{display:none!important}@media(max-width:650px){.answers{grid-template-columns:1fr}.profilebox{grid-template-columns:1fr}.stats{display:none}header{position:static}.app{padding:10px}.screen{padding:17px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">🧠 <span>Quiz</span>Verse</div>
+  <div class="stats">
+    <div class="pill">🪙 <span id="coins">0</span></div>
+    <div class="pill">🔥 <span id="streak">0</span></div>
+    <div class="pill">🧠 <span id="iq">0</span></div>
+  </div>
+</header>
+
+<section id="home" class="screen">
+  <div class="row"><div><h1>¡Bienvenido a QuizVerse!</h1><p class="muted">Pon a prueba tus conocimientos, consigue monedas y construye tu racha diaria.</p></div>
+  <button class="primary" onclick="show('profile')">👤 Mi perfil</button></div>
+  <div id="loginNotice" class="notice"></div>
+  <h2>Categorías</h2><div id="categories" class="grid"></div>
+</section>
+
+<section id="quiz" class="screen hidden">
+  <div class="row"><button class="secondary" onclick="endQuiz()">← Categorías</button><div>❤️ <span id="lives">3</span> &nbsp; 🔥 <span id="qstreak">0</span></div></div>
+  <div class="notice"><b id="qcat"></b> · Pregunta <span id="qnum"></span>/10 · ⏱️ <span id="timer">20</span>s</div>
+  <div class="bar"><div id="timebar" class="fill"></div></div>
+  <h2 id="question"></h2><div id="answers" class="answers"></div>
+  <div class="row" style="margin-top:18px">
+    <button class="secondary" onclick="useHelp('hint')">💡 Pista (<span id="hintCount">0</span>)</button>
+    <button class="secondary" onclick="useHelp('fifty')">❌❌ 50/50 (<span id="fiftyCount">0</span>)</button>
+    <button class="secondary" onclick="useHelp('time')">⏱️ +Tiempo (<span id="timeCount">0</span>)</button>
+    <button class="secondary" onclick="useHelp('swap')">🔄 Cambiar (<span id="swapCount">0</span>)</button>
+  </div>
+</section>
+
+<section id="result" class="screen hidden">
+  <h1 id="resultTitle"></h1><p id="resultText" class="muted"></p>
+  <div class="grid">
+    <div class="card"><h3>🏆 Puntuación</h3><div class="big" id="resScore">0</div></div>
+    <div class="card"><h3>🧠 Índice Quiz</h3><div class="big" id="resIQ">0</div></div>
+    <div class="card"><h3>🪙 Monedas ganadas</h3><div class="big" id="resCoins">0</div></div>
+  </div>
+  <div class="row" style="margin-top:20px"><button class="primary" onclick="retry()">🔁 Repetir</button><button class="secondary" onclick="show('home')">📚 Categorías</button></div>
+</section>
+
+<section id="profile" class="screen hidden">
+  <div class="row"><h1>👤 Perfil del jugador</h1><button class="secondary" onclick="show('home')">← Volver</button></div>
+  <div class="profilebox">
+    <div class="avatar">🧠</div>
+    <div><h2 id="playerName">Jugador</h2><p class="muted">Nivel <b id="level">1</b> · XP <span id="xp">0</span></p>
+    <p>🔥 Racha: <b id="pStreak">0 días</b> &nbsp; 🛡️ Protectores: <b id="protectors">0</b></p>
+    <p>🧠 Índice Quiz: <b id="pIQ">0/1000</b></p></div>
+  </div>
+  <div class="grid" style="margin-top:20px">
+    <div class="card">✅ Aciertos: <b id="correctTotal">0</b></div><div class="card">❓ Respondidas: <b id="answeredTotal">0</b></div><div class="card">🏆 Mejor puntuación: <b id="bestScore">0</b></div><div class="card">🔥 Mejor racha de respuestas: <b id="bestAnswerStreak">0</b></div>
+  </div>
+  <h2 style="margin-top:25px">🏆 Logros</h2><div id="achievements"></div>
+</section>
+
+<section id="store" class="screen hidden">
+  <div class="row"><h1>🛒 Tienda de ayudas</h1><button class="secondary" onclick="show('home')">← Volver</button></div>
+  <p class="muted">Compra ayudas con las monedas que ganas jugando.</p><div id="shop" class="shop"></div>
+</section>
+</div>
+
+<script>
+const categories={
+"🎵 Música y celebridades":["¿Qué instrumento tiene teclas blancas y negras?","¿Quién interpreta la canción tema de la película Titanic?","¿Qué premio se entrega en la música popular estadounidense y lleva el nombre de una gramola?","¿Qué banda británica lanzó el álbum Abbey Road?","¿Cuántas cuerdas tiene normalmente una guitarra?","¿Qué género musical nació en Jamaica y popularizó el reggae?","¿Qué instrumento pertenece a la familia de viento-metal?","¿Cómo se llama una actuación musical realizada por una sola persona?","¿Qué término describe la velocidad de una pieza musical?","¿Qué símbolo musical indica silencio?"],
+"Cine y streaming":["¿Qué objeto mágico usa Harry Potter para lanzar hechizos?","¿Cómo se llama el ogro protagonista de Shrek?","¿Qué saga presenta a Luke Skywalker?","¿Qué personaje vive en Fondo de Bikini?","¿Qué género cinematográfico busca provocar miedo?","¿Qué profesional dirige una película?","¿Cómo se llama el premio principal de la Academia de Hollywood?","¿Qué compañía creó originalmente el personaje Mickey Mouse?","¿Qué película animada presenta a Woody y Buzz Lightyear?","¿Qué significa CGI en cine?"],
+"🎮 Videojuegos":["¿Qué personaje es conocido por rescatar a la Princesa Peach?","¿Qué compañía creó Minecraft?","¿En qué juego aparecen los Pokémon?","¿Qué significa NPC en videojuegos?","¿Qué consola pertenece a Nintendo?","¿Qué género es Fortnite principalmente?","¿Qué personaje azul corre a gran velocidad en Sega?","¿Qué elemento suele representar la barra de vida?","¿Qué significa RPG?","¿Qué dispositivo se usa para controlar muchos videojuegos de consola?"],
+"⚽ Deportes":["¿Cuántos jugadores tiene un equipo de fútbol en el campo al comenzar un partido?","¿En qué deporte se usa una raqueta y una pelota amarilla?","¿Cuántos puntos vale un tiro libre en baloncesto?","¿Qué deporte utiliza una red y remates?","¿En qué deporte se practica el salto de altura?","¿Qué color de tarjeta indica expulsión en fútbol?","¿Cuántos anillos aparecen en el símbolo olímpico?","¿Qué deporte se practica sobre hielo con discos?","¿Cómo se llama la carrera de 42.195 km?","¿Qué deporte utiliza un bate y bases?"],
+"🏀 NBA":["¿Qué significan las siglas NBA?","¿Cuántos jugadores de un mismo equipo están en cancha en baloncesto?","¿Cuánto vale normalmente un tiro desde fuera de la línea de tres puntos?","¿Qué posición suele organizar el ataque?","¿Cuánto dura un cuarto en un partido NBA?","¿Qué objeto se intenta introducir en el aro?","¿Cómo se llama la fase final por el campeonato?","¿Qué acción ocurre cuando un jugador recupera el balón tras un tiro fallado?","¿Qué infracción ocurre cuando un jugador camina con el balón sin botarlo correctamente?","¿Qué liga profesional de baloncesto es la NBA?"],
+"🏈 NFL":["¿Qué significan las siglas NFL?","¿Cuántos puntos vale un touchdown?","¿Cuántos equipos participan en la NFL?","¿Qué jugador lanza normalmente el balón en una jugada ofensiva?","¿Cómo se llama el partido por el campeonato de la NFL?","¿Qué objeto ovalado se utiliza?","¿Cuántos puntos vale normalmente un field goal?","¿Qué equipo intenta avanzar con el balón?","¿Cómo se llama la acción de derribar al quarterback detrás de la línea?","¿En qué país se juega principalmente la NFL?"],
+"🏎️ Fórmula 1":["¿Qué significan las siglas F1?","¿Cuántos pilotos compiten por cada equipo durante un Gran Premio?","¿Cómo se llama la parada para cambiar neumáticos?","¿Qué bandera indica el final de una carrera?","¿Qué significa pole position?","¿Qué elemento proporciona agarre entre el auto y la pista?","¿Cómo se llama la vuelta más rápida de una carrera?","¿Qué tipo de vehículo se utiliza en F1?","¿Qué significa DRS?","¿Qué se entrega al ganador de un Gran Premio?"],
+"💻 Tecnología":["¿Qué significa CPU?","¿Qué dispositivo se usa para introducir texto en una computadora?","¿Qué sistema operativo desarrolla Microsoft?","¿Qué significa Wi‑Fi?","¿Qué componente almacena datos de forma permanente?","¿Qué es un navegador web?","¿Qué unidad se usa para medir almacenamiento digital?","¿Qué tecnología permite conectar dispositivos cercanos sin cables y a corta distancia?","¿Qué significa USB?","¿Qué lenguaje se utiliza ampliamente para estructurar páginas web?"],
+"🤖 Inteligencia Artificial":["¿Qué significa IA?","¿Qué es un modelo de lenguaje?","¿Qué tarea puede realizar un sistema de reconocimiento de imágenes?","¿Qué significa que una IA sea generativa?","¿Para qué sirve un prompt?","¿Qué es un dato de entrenamiento?","¿Qué problema puede ocurrir si los datos de entrenamiento tienen sesgos?","¿Puede una IA equivocarse?","¿Qué es una red neuronal artificial?","¿Qué significa automatizar una tarea?"],
+"🌱 Bienestar":["¿Por qué es importante dormir adecuadamente?","¿Qué ayuda a mantener una buena hidratación?","¿Qué actividad puede ayudar a reducir el estrés?","¿Qué significa tener una alimentación equilibrada?","¿Por qué es importante mantener una rutina de descanso?","¿Qué hábito ayuda a cuidar los dientes?","¿Qué función cumple la actividad física regular?","¿Qué es una pausa activa?","¿Por qué es útil organizar el tiempo de estudio?","¿Qué puede ayudar a mantener una buena concentración?"],
+"🇬🇹 Guatemala":["¿Cuál es la capital de Guatemala?","¿Cuál es la moneda de Guatemala?","¿Qué lago es famoso por estar rodeado de volcanes?","¿Cuál es uno de los sitios arqueológicos mayas más conocidos de Guatemala?","¿Qué océanos bañan las costas de Guatemala?","¿Qué idioma oficial se utiliza en Guatemala junto con numerosos idiomas mayas?","¿En qué mes se celebra la independencia de Guatemala?","¿Qué volcán es uno de los más activos del país?","¿Qué departamento incluye la ciudad de Mazatenango?","¿Cuál es el ave nacional de Guatemala?"],
+"🔬 Ciencia":["¿Cuál es el planeta más cercano al Sol?","¿Qué gas necesitan las plantas para realizar fotosíntesis?","¿Cuál es el estado del agua a 0 °C en condiciones normales?","¿Qué órgano bombea la sangre?","¿Qué fuerza atrae los objetos hacia la Tierra?","¿Cuál es la unidad básica de los seres vivos?","¿Qué planeta es conocido como el planeta rojo?","¿Qué parte de la planta absorbe agua del suelo?","¿Qué astro ilumina la Tierra durante el día?","¿Qué instrumento sirve para observar objetos muy pequeños?"],
+"📚 Historia":["¿En qué año llegó Cristóbal Colón a América?","¿Qué civilización construyó grandes ciudades como Tikal?","¿Qué documento estadounidense declaró la independencia de las Trece Colonias?","¿Qué acontecimiento comenzó en Francia en 1789?","¿Cómo se llamaba el sistema de escritura maya basado en glifos?","¿Qué civilización construyó Machu Picchu?","¿Qué ruta comercial conectaba Asia y Europa?","¿Qué imperio tuvo como capital a Tenochtitlan?","¿Qué invento de Gutenberg revolucionó la difusión de libros?","¿Qué periodo histórico siguió a la Edad Media?"],
+"➗ Matemáticas":["¿Cuánto es 7 × 8?","¿Cuánto es 144 ÷ 12?","¿Cuántos lados tiene un pentágono?","¿Cuál es la mitad de 50?","¿Cuánto es 15 + 27?","¿Qué figura tiene tres lados?","¿Cuánto es 9²?","¿Cuál es el perímetro de un cuadrado de lado 5?","¿Qué número es primo: 9, 11 o 15?","¿Cuánto es 1000 − 375?"]
+};
+
+const options={
+"¿Qué instrumento tiene teclas blancas y negras?":["Piano","Guitarra","Trompeta","Violín"],
+"¿Quién interpreta la canción tema de la película Titanic?":["Celine Dion","Adele","Taylor Swift","Rihanna"],
+"¿Qué premio se entrega en la música popular estadounidense y lleva el nombre de una gramola?":["Grammy","Oscar","Emmy","Tony"],
+"¿Qué banda británica lanzó el álbum Abbey Road?":["The Beatles","Queen","ABBA","Oasis"],
+"¿Cuántas cuerdas tiene normalmente una guitarra?":["6","4","5","8"],
+"¿Qué género musical nació en Jamaica y popularizó el reggae?":["Reggae","Blues","Tango","Opera"],
+"¿Qué instrumento pertenece a la familia de viento-metal?":["Trompeta","Violín","Flauta dulce","Piano"],
+"¿Cómo se llama una actuación musical realizada por una sola persona?":["Solo","Dúo","Coro","Orquesta"],
+"¿Qué término describe la velocidad de una pieza musical?":["Tempo","Ritmo visual","Tono","Eco"],
+"¿Qué símbolo musical indica silencio?":["Silencio musical","Acorde","Clave","Compás"],
+"¿Qué objeto mágico usa Harry Potter para lanzar hechizos?":["Varita","Anillo","Espada","Capa"],
+"¿Cómo se llama el ogro protagonista de Shrek?":["Shrek","Fiona","Burro","Lord Farquaad"],
+"¿Qué saga presenta a Luke Skywalker?":["Star Wars","Harry Potter","Marvel","Jurassic Park"],
+"¿Qué personaje vive en Fondo de Bikini?":["Bob Esponja","Shrek","Woody","Simba"],
+"¿Qué género cinematográfico busca provocar miedo?":["Terror","Comedia","Musical","Documental"],
+"¿Qué profesional dirige una película?":["Director","Árbitro","Editor de texto","Productor musical"],
+"¿Cómo se llama el premio principal de la Academia de Hollywood?":["Oscar","Grammy","Emmy","Tony"],
+"¿Qué compañía creó originalmente el personaje Mickey Mouse?":["Disney","Nintendo","Sony","Warner"],
+"¿Qué película animada presenta a Woody y Buzz Lightyear?":["Toy Story","Cars","Shrek","Frozen"],
+"¿Qué significa CGI en cine?":["Imágenes generadas por computadora","Cámara general interna","Color gráfico instantáneo","Control de guion"],
+"¿Qué personaje es conocido por rescatar a la Princesa Peach?":["Mario","Sonic","Link","Kirby"],
+"¿Qué compañía creó Minecraft?":["Mojang","Nintendo","Valve","Sega"],
+"¿En qué juego aparecen los Pokémon?":["Pokémon","Fortnite","Minecraft","Tetris"],
+"¿Qué significa NPC en videojuegos?":["Personaje no jugable","Nuevo personaje principal","Nivel principal completo","Número de puntos conseguidos"],
+"¿Qué consola pertenece a Nintendo?":["Switch","PlayStation","Xbox","Steam Deck"],
+"¿Qué género es Fortnite principalmente?":["Battle royale","Simulación médica","Rompecabezas","Carreras"],
+"¿Qué personaje azul corre a gran velocidad en Sega?":["Sonic","Mario","Link","Pac-Man"],
+"¿Qué elemento suele representar la barra de vida?":["Salud","Monedas","Nivel","Inventario"],
+"¿Qué significa RPG?":["Juego de rol","Juego de carreras","Juego de cartas","Juego musical"],
+"¿Qué dispositivo se usa para controlar muchos videojuegos de consola?":["Control","Monitor","Impresora","Router"],
+"¿Cuántos jugadores tiene un equipo de fútbol en el campo al comenzar un partido?":["11","9","7","15"],
+"¿En qué deporte se usa una raqueta y una pelota amarilla?":["Tenis","Fútbol","Boxeo","Natación"],
+"¿Cuántos puntos vale un tiro libre en baloncesto?":["1","2","3","4"],
+"¿Qué deporte utiliza una red y remates?":["Voleibol","Ciclismo","Atletismo","Golf"],
+"¿En qué deporte se practica el salto de altura?":["Atletismo","Béisbol","Hockey","Tenis"],
+"¿Qué color de tarjeta indica expulsión en fútbol?":["Roja","Azul","Verde","Blanca"],
+"¿Cuántos anillos aparecen en el símbolo olímpico?":["5","4","6","7"],
+"¿Qué deporte se practica sobre hielo con discos?":["Hockey","Béisbol","Rugby","Cricket"],
+"¿Cómo se llama la carrera de 42.195 km?":["Maratón","Sprint","Decatlón","Triatlón"],
+"¿Qué deporte utiliza un bate y bases?":["Béisbol","Voleibol","Golf","Natación"],
+"¿Qué significan las siglas NBA?":["National Basketball Association","National Baseball Association","North Basketball Alliance","National Ball Association"],
+"¿Cuántos jugadores de un mismo equipo están en cancha en baloncesto?":["5","6","7","11"],
+"¿Cuánto vale normalmente un tiro desde fuera de la línea de tres puntos?":["3","1","2","4"],
+"¿Qué posición suele organizar el ataque?":["Base","Portero","Lanzador","Receptor"],
+"¿Cuánto dura un cuarto en un partido NBA?":["12 minutos","10 minutos","15 minutos","20 minutos"],
+"¿Qué objeto se intenta introducir en el aro?":["Balón","Disco","Pelota de tenis","Volante"],
+"¿Cómo se llama la fase final por el campeonato?":["Playoffs","Prólogo","Pretemporada","Descanso"],
+"¿Qué acción ocurre cuando un jugador recupera el balón tras un tiro fallado?":["Rebote","Saque","Falta","Bloqueo"],
+"¿Qué infracción ocurre cuando un jugador camina con el balón sin botarlo correctamente?":["Pasos","Fuera de juego","Corner","Saque"],
+"¿Qué liga profesional de baloncesto es la NBA?":["Estados Unidos","Japón","Brasil","España"],
+"¿Qué significan las siglas NFL?":["National Football League","National Futsal League","North Football League","National Field League"],
+"¿Cuántos puntos vale un touchdown?":["6","3","7","1"],
+"¿Cuántos equipos participan en la NFL?":["32","20","30","40"],
+"¿Qué jugador lanza normalmente el balón en una jugada ofensiva?":["Quarterback","Portero","Base","Receptor"],
+"¿Cómo se llama el partido por el campeonato de la NFL?":["Super Bowl","Final Four","World Series","Grand Final"],
+"¿Qué objeto ovalado se utiliza?":["Balón","Disco","Pelota","Bola"],
+"¿Cuántos puntos vale normalmente un field goal?":["3","1","6","2"],
+"¿Qué equipo intenta avanzar con el balón?":["Ofensiva","Defensa","Árbitros","Entrenadores"],
+"¿Cómo se llama la acción de derribar al quarterback detrás de la línea?":["Sack","Dunk","Strike","Ace"],
+"¿En qué país se juega principalmente la NFL?":["Estados Unidos","Canadá","México","Reino Unido"],
+"¿Qué significan las siglas F1?":["Fórmula 1","Fútbol 1","Fuerza 1","Formula Internacional"],
+"¿Cuántos pilotos compiten por cada equipo durante un Gran Premio?":["2","1","3","4"],
+"¿Cómo se llama la parada para cambiar neumáticos?":["Pit stop","Timeout","Restart","Pit lane"],
+"¿Qué bandera indica el final de una carrera?":["A cuadros","Roja","Amarilla","Verde"],
+"¿Qué significa pole position?":["Primer puesto de salida","Última vuelta","Parada obligatoria","Vuelta lenta"],
+"¿Qué elemento proporciona agarre entre el auto y la pista?":["Neumáticos","Alerón trasero","Casco","Volante"],
+"¿Cómo se llama la vuelta más rápida de una carrera?":["Vuelta rápida","Vuelta cero","Vuelta libre","Vuelta final"],
+"¿Qué tipo de vehículo se utiliza en F1?":["Monoplaza","SUV","Camión","Motocicleta"],
+"¿Qué significa DRS?":["Drag Reduction System","Drive Racing Speed","Dynamic Road System","Driver Response Signal"],
+"¿Qué se entrega al ganador de un Gran Premio?":["Trofeo","Medalla olímpica","Cinturón","Copa escolar"],
+"¿Qué significa CPU?":["Unidad Central de Procesamiento","Control Principal Universal","Unidad de Programa Central","Computadora Personal Unificada"],
+"¿Qué dispositivo se usa para introducir texto en una computadora?":["Teclado","Monitor","Altavoz","Proyector"],
+"¿Qué sistema operativo desarrolla Microsoft?":["Windows","Android","iOS","Linux"],
+"¿Qué significa Wi‑Fi?":["Tecnología de conexión inalámbrica","Windows File Finder","Wireless Internet File","Wide Fiber"],
+"¿Qué componente almacena datos de forma permanente?":["Almacenamiento","RAM","CPU","Ventilador"],
+"¿Qué es un navegador web?":["Programa para visitar sitios web","Antivirus físico","Cable de red","Sistema de impresión"],
+"¿Qué unidad se usa para medir almacenamiento digital?":["Gigabyte","Voltio","Metro","Hertz"],
+"¿Qué tecnología permite conectar dispositivos cercanos sin cables y a corta distancia?":["Bluetooth","GPS","HDMI","Ethernet"],
+"¿Qué significa USB?":["Universal Serial Bus","United System Browser","Universal Software Base","User Storage Box"],
+"¿Qué lenguaje se utiliza ampliamente para estructurar páginas web?":["HTML","Python","SQL","C++"],
+"¿Qué significa IA?":["Inteligencia Artificial","Internet Avanzado","Información Automática","Interfaz Aplicada"],
+"¿Qué es un modelo de lenguaje?":["Sistema entrenado para trabajar con lenguaje","Un teclado","Un videojuego","Un antivirus"],
+"¿Qué tarea puede realizar un sistema de reconocimiento de imágenes?":["Identificar objetos o patrones","Aumentar la batería","Imprimir papel","Cambiar el teclado"],
+"¿Qué significa que una IA sea generativa?":["Puede crear contenido nuevo","Solo puede borrar archivos","No puede aprender patrones","Solo funciona sin datos"],
+"¿Para qué sirve un prompt?":["Dar instrucciones a una IA","Medir temperatura","Guardar batería","Conectar una impresora"],
+"¿Qué es un dato de entrenamiento?":["Información usada para entrenar un modelo","Una contraseña","Un cable","Una pantalla"],
+"¿Qué problema puede ocurrir si los datos de entrenamiento tienen sesgos?":["Resultados sesgados","Más memoria física","Mayor resolución","Menor tamaño de pantalla"],
+"¿Puede una IA equivocarse?":["Sí","No","Solo los domingos","Nunca"],
+"¿Qué es una red neuronal artificial?":["Modelo inspirado en conexiones neuronales","Una red Wi-Fi","Un cable","Un antivirus"],
+"¿Qué significa automatizar una tarea?":["Hacer que un sistema la ejecute automáticamente","Eliminarla siempre","Hacerla manualmente","Imprimirla"],
+"¿Por qué es importante dormir adecuadamente?":["Ayuda a la recuperación y el funcionamiento diario","Evita beber agua","Elimina la necesidad de comer","Hace innecesario estudiar"],
+"¿Qué ayuda a mantener una buena hidratación?":["Beber agua regularmente","Dormir menos","Evitar líquidos","No hacer pausas"],
+"¿Qué actividad puede ayudar a reducir el estrés?":["Actividad física o relajación","No dormir","Saltarse comidas","Usar pantallas sin descanso"],
+"¿Qué significa tener una alimentación equilibrada?":["Consumir variedad de alimentos y nutrientes","Comer un solo alimento","Evitar toda comida","Comer únicamente dulces"],
+"¿Por qué es importante mantener una rutina de descanso?":["Favorece hábitos de sueño saludables","Elimina la necesidad de dormir","Aumenta el cansancio","Evita estudiar"],
+"¿Qué hábito ayuda a cuidar los dientes?":["Cepillarlos regularmente","No beber agua","Comer más azúcar","No visitar al dentista"],
+"¿Qué función cumple la actividad física regular?":["Apoya la salud y el bienestar","Hace innecesario dormir","Sustituye todos los alimentos","Elimina el estrés siempre"],
+"¿Qué es una pausa activa?":["Un breve descanso con movimiento","Una siesta de muchas horas","Una comida","Un examen"],
+"¿Por qué es útil organizar el tiempo de estudio?":["Ayuda a distribuir tareas y descansos","Evita aprender","Aumenta la confusión","Elimina los descansos"],
+"¿Qué puede ayudar a mantener una buena concentración?":["Dormir bien y reducir distracciones","No descansar","Hacer varias tareas siempre","Evitar beber agua"],
+"¿Cuál es la capital de Guatemala?":["Ciudad de Guatemala","Quetzaltenango","Escuintla","Mazatenango"],
+"¿Cuál es la moneda de Guatemala?":["Quetzal","Peso","Dólar","Lempira"],
+"¿Qué lago es famoso por estar rodeado de volcanes?":["Lago de Atitlán","Lago Petén Itzá","Lago Amatitlán","Lago Izabal"],
+"¿Cuál es uno de los sitios arqueológicos mayas más conocidos de Guatemala?":["Tikal","Chichén Itzá","Teotihuacán","Machu Picchu"],
+"¿Qué océanos bañan las costas de Guatemala?":["Pacífico y Atlántico","Índico y Pacífico","Ártico y Atlántico","Solo Pacífico"],
+"¿Qué idioma oficial se utiliza en Guatemala junto con numerosos idiomas mayas?":["Español","Francés","Portugués","Italiano"],
+"¿En qué mes se celebra la independencia de Guatemala?":["Septiembre","Enero","Mayo","Diciembre"],
+"¿Qué volcán es uno de los más activos del país?":["Volcán de Fuego","Santa María","Agua","Tacaná"],
+"¿Qué departamento incluye la ciudad de Mazatenango?":["Suchitepéquez","Retalhuleu","Escuintla","Sololá"],
+"¿Cuál es el ave nacional de Guatemala?":["Quetzal","Águila","Tucán","Guacamaya"],
+"¿Cuál es el planeta más cercano al Sol?":["Mercurio","Venus","Tierra","Marte"],
+"¿Qué gas necesitan las plantas para realizar fotosíntesis?":["Dióxido de carbono","Oxígeno","Helio","Nitrógeno puro"],
+"¿Cuál es el estado del agua a 0 °C en condiciones normales?":["Sólido","Gas","Plasma","Metal"],
+"¿Qué órgano bombea la sangre?":["Corazón","Pulmón","Hígado","Riñón"],
+"¿Qué fuerza atrae los objetos hacia la Tierra?":["Gravedad","Electricidad","Magnetismo","Fricción"],
+"¿Cuál es la unidad básica de los seres vivos?":["Célula","Átomo","Órgano","Tejido"],
+"¿Qué planeta es conocido como el planeta rojo?":["Marte","Júpiter","Saturno","Mercurio"],
+"¿Qué parte de la planta absorbe agua del suelo?":["Raíz","Flor","Fruto","Hoja"],
+"¿Qué astro ilumina la Tierra durante el día?":["Sol","Luna","Marte","Venus"],
+"¿Qué instrumento sirve para observar objetos muy pequeños?":["Microscopio","Telescopio","Barómetro","Termómetro"],
+"¿En qué año llegó Cristóbal Colón a América?":["1492","1521","1776","1810"],
+"¿Qué civilización construyó grandes ciudades como Tikal?":["Maya","Romana","Egipcia","Inca"],
+"¿Qué documento estadounidense declaró la independencia de las Trece Colonias?":["Declaración de Independencia","Constitución de 1787","Carta Magna","Tratado de París"],
+"¿Qué acontecimiento comenzó en Francia en 1789?":["Revolución Francesa","Revolución Industrial","Guerra Fría","Renacimiento"],
+"¿Cómo se llamaba el sistema de escritura maya basado en glifos?":["Escritura jeroglífica maya","Cuneiforme","Alfabeto latino","Runas"],
+"¿Qué civilización construyó Machu Picchu?":["Inca","Maya","Azteca","Romana"],
+"¿Qué ruta comercial conectaba Asia y Europa?":["Ruta de la Seda","Ruta del Ámbar","Ruta del Maíz","Ruta del Cobre"],
+"¿Qué imperio tuvo como capital a Tenochtitlan?":["Mexica o azteca","Inca","Romano","Maya"],
+"¿Qué invento de Gutenberg revolucionó la difusión de libros?":["Imprenta","Teléfono","Radio","Televisión"],
+"¿Qué periodo histórico siguió a la Edad Media?":["Edad Moderna","Prehistoria","Edad Antigua","Edad de Piedra"],
+"¿Cuánto es 7 × 8?":["56","48","64","54"],
+"¿Cuánto es 144 ÷ 12?":["12","10","14","16"],
+"¿Cuántos lados tiene un pentágono?":["5","4","6","8"],
+"¿Cuál es la mitad de 50?":["25","20","30","15"],
+"¿Cuánto es 15 + 27?":["42","32","52","40"],
+"¿Qué figura tiene tres lados?":["Triángulo","Cuadrado","Pentágono","Círculo"],
+"¿Cuánto es 9²?":["81","18","72","90"],
+"¿Cuál es el perímetro de un cuadrado de lado 5?":["20","10","25","15"],
+"¿Qué número es primo: 9, 11 o 15?":["11","9","15","21"],
+"¿Cuánto es 1000 − 375?":["625","675","525","725"]
+};
+
+const correct={
+"¿Qué instrumento tiene teclas blancas y negras?":"Piano","¿Quién interpreta la canción tema de la película Titanic?":"Celine Dion","¿Qué premio se entrega en la música popular estadounidense y lleva el nombre de una gramola?":"Grammy","¿Qué banda británica lanzó el álbum Abbey Road?":"The Beatles","¿Cuántas cuerdas tiene normalmente una guitarra?":"6","¿Qué género musical nació en Jamaica y popularizó el reggae?":"Reggae","¿Qué instrumento pertenece a la familia de viento-metal?":"Trompeta","¿Cómo se llama una actuación musical realizada por una sola persona?":"Solo","¿Qué término describe la velocidad de una pieza musical?":"Tempo","¿Qué símbolo musical indica silencio?":"Silencio musical",
+"¿Qué objeto mágico usa Harry Potter para lanzar hechizos?":"Varita","¿Cómo se llama el ogro protagonista de Shrek?":"Shrek","¿Qué saga presenta a Luke Skywalker?":"Star Wars","¿Qué personaje vive en Fondo de Bikini?":"Bob Esponja","¿Qué género cinematográfico busca provocar miedo?":"Terror","¿Qué profesional dirige una película?":"Director","¿Cómo se llama el premio principal de la Academia de Hollywood?":"Oscar","¿Qué compañía creó originalmente el personaje Mickey Mouse?":"Disney","¿Qué película animada presenta a Woody y Buzz Lightyear?":"Toy Story","¿Qué significa CGI en cine?":"Imágenes generadas por computadora",
+"¿Qué personaje es conocido por rescatar a la Princesa Peach?":"Mario","¿Qué compañía creó Minecraft?":"Mojang","¿En qué juego aparecen los Pokémon?":"Pokémon","¿Qué significa NPC en videojuegos?":"Personaje no jugable","¿Qué consola pertenece a Nintendo?":"Switch","¿Qué género es Fortnite principalmente?":"Battle royale","¿Qué personaje azul corre a gran velocidad en Sega?":"Sonic","¿Qué elemento suele representar la barra de vida?":"Salud","¿Qué significa RPG?":"Juego de rol","¿Qué dispositivo se usa para controlar muchos videojuegos de consola?":"Control",
+"¿Cuántos jugadores tiene un equipo de fútbol en el campo al comenzar un partido?":"11","¿En qué deporte se usa una raqueta y una pelota amarilla?":"Tenis","¿Cuántos puntos vale un tiro libre en baloncesto?":"1","¿Qué deporte utiliza una red y remates?":"Voleibol","¿En qué deporte se practica el salto de altura?":"Atletismo","¿Qué color de tarjeta indica expulsión en fútbol?":"Roja","¿Cuántos anillos aparecen en el símbolo olímpico?":"5","¿Qué deporte se practica sobre hielo con discos?":"Hockey","¿Cómo se llama la carrera de 42.195 km?":"Maratón","¿Qué deporte utiliza un bate y bases?":"Béisbol",
+"¿Qué significan las siglas NBA?":"National Basketball Association","¿Cuántos jugadores de un mismo equipo están en cancha en baloncesto?":"5","¿Cuánto vale normalmente un tiro desde fuera de la línea de tres puntos?":"3","¿Qué posición suele organizar el ataque?":"Base","¿Cuánto dura un cuarto en un partido NBA?":"12 minutos","¿Qué objeto se intenta introducir en el aro?":"Balón","¿Cómo se llama la fase final por el campeonato?":"Playoffs","¿Qué acción ocurre cuando un jugador recupera el balón tras un tiro fallado?":"Rebote","¿Qué infracción ocurre cuando un jugador camina con el balón sin botarlo correctamente?":"Pasos","¿Qué liga profesional de baloncesto es la NBA?":"Estados Unidos",
+"¿Qué significan las siglas NFL?":"National Football League","¿Cuántos puntos vale un touchdown?":"6","¿Cuántos equipos participan en la NFL?":"32","¿Qué jugador lanza normalmente el balón en una jugada ofensiva?":"Quarterback","¿Cómo se llama el partido por el campeonato de la NFL?":"Super Bowl","¿Qué objeto ovalado se utiliza?":"Balón","¿Cuántos puntos vale normalmente un field goal?":"3","¿Qué equipo intenta avanzar con el balón?":"Ofensiva","¿Cómo se llama la acción de derribar al quarterback detrás de la línea?":"Sack","¿En qué país se juega principalmente la NFL?":"Estados Unidos",
+"¿Qué significan las siglas F1?":"Fórmula 1","¿Cuántos pilotos compiten por cada equipo durante un Gran Premio?":"2","¿Cómo se llama la parada para cambiar neumáticos?":"Pit stop","¿Qué bandera indica el final de una carrera?":"A cuadros","¿Qué significa pole position?":"Primer puesto de salida","¿Qué elemento proporciona agarre entre el auto y la pista?":"Neumáticos","¿Cómo se llama la vuelta más rápida de una carrera?":"Vuelta rápida","¿Qué tipo de vehículo se utiliza en F1?":"Monoplaza","¿Qué significa DRS?":"Drag Reduction System","¿Qué se entrega al ganador de un Gran Premio?":"Trofeo",
+"¿Qué significa CPU?":"Unidad Central de Procesamiento","¿Qué dispositivo se usa para introducir texto en una computadora?":"Teclado","¿Qué sistema operativo desarrolla Microsoft?":"Windows","¿Qué significa Wi‑Fi?":"Tecnología de conexión inalámbrica","¿Qué componente almacena datos de forma permanente?":"Almacenamiento","¿Qué es un navegador web?":"Programa para visitar sitios web","¿Qué unidad se usa para medir almacenamiento digital?":"Gigabyte","¿Qué tecnología permite conectar dispositivos cercanos sin cables y a corta distancia?":"Bluetooth","¿Qué significa USB?":"Universal Serial Bus","¿Qué lenguaje se utiliza ampliamente para estructurar páginas web?":"HTML",
+"¿Qué significa IA?":"Inteligencia Artificial","¿Qué es un modelo de lenguaje?":"Sistema entrenado para trabajar con lenguaje","¿Qué tarea puede realizar un sistema de reconocimiento de imágenes?":"Identificar objetos o patrones","¿Qué significa que una IA sea generativa?":"Puede crear contenido nuevo","¿Para qué sirve un prompt?":"Dar instrucciones a una IA","¿Qué es un dato de entrenamiento?":"Información usada para entrenar un modelo","¿Qué problema puede ocurrir si los datos de entrenamiento tienen sesgos?":"Resultados sesgados","¿Puede una IA equivocarse?":"Sí","¿Qué es una red neuronal artificial?":"Modelo inspirado en conexiones neuronales","¿Qué significa automatizar una tarea?":"Hacer que un sistema la ejecute automáticamente",
+"¿Por qué es importante dormir adecuadamente?":"Ayuda a la recuperación y el funcionamiento diario","¿Qué ayuda a mantener una buena hidratación?":"Beber agua regularmente","¿Qué actividad puede ayudar a reducir el estrés?":"Actividad física o relajación","¿Qué significa tener una alimentación equilibrada?":"Consumir variedad de alimentos y nutrientes","¿Por qué es importante mantener una rutina de descanso?":"Favorece hábitos de sueño saludables","¿Qué hábito ayuda a cuidar los dientes?":"Cepillarlos regularmente","¿Qué función cumple la actividad física regular?":"Apoya la salud y el bienestar","¿Qué es una pausa activa?":"Un breve descanso con movimiento","¿Por qué es útil organizar el tiempo de estudio?":"Ayuda a distribuir tareas y descansos","¿Qué puede ayudar a mantener una buena concentración?":"Dormir bien y reducir distracciones",
+"¿Cuál es la capital de Guatemala?":"Ciudad de Guatemala","¿Cuál es la moneda de Guatemala?":"Quetzal","¿Qué lago es famoso por estar rodeado de volcanes?":"Lago de Atitlán","¿Cuál es uno de los sitios arqueológicos mayas más conocidos de Guatemala?":"Tikal","¿Qué océanos bañan las costas de Guatemala?":"Pacífico y Atlántico","¿Qué idioma oficial se utiliza en Guatemala junto con numerosos idiomas mayas?":"Español","¿En qué mes se celebra la independencia de Guatemala?":"Septiembre","¿Qué volcán es uno de los más activos del país?":"Volcán de Fuego","¿Qué departamento incluye la ciudad de Mazatenango?":"Suchitepéquez","¿Cuál es el ave nacional de Guatemala?":"Quetzal",
+"¿Cuál es el planeta más cercano al Sol?":"Mercurio","¿Qué gas necesitan las plantas para realizar fotosíntesis?":"Dióxido de carbono","¿Cuál es el estado del agua a 0 °C en condiciones normales?":"Sólido","¿Qué órgano bombea la sangre?":"Corazón","¿Qué fuerza atrae los objetos hacia la Tierra?":"Gravedad","¿Cuál es la unidad básica de los seres vivos?":"Célula","¿Qué planeta es conocido como el planeta rojo?":"Marte","¿Qué parte de la planta absorbe agua del suelo?":"Raíz","¿Qué astro ilumina la Tierra durante el día?":"Sol","¿Qué instrumento sirve para observar objetos muy pequeños?":"Microscopio",
+"¿En qué año llegó Cristóbal Colón a América?":"1492","¿Qué civilización construyó grandes ciudades como Tikal?":"Maya","¿Qué documento estadounidense declaró la independencia de las Trece Colonias?":"Declaración de Independencia","¿Qué acontecimiento comenzó en Francia en 1789?":"Revolución Francesa","¿Cómo se llamaba el sistema de escritura maya basado en glifos?":"Escritura jeroglífica maya","¿Qué civilización construyó Machu Picchu?":"Inca","¿Qué ruta comercial conectaba Asia y Europa?":"Ruta de la Seda","¿Qué imperio tuvo como capital a Tenochtitlan?":"Mexica o azteca","¿Qué invento de Gutenberg revolucionó la difusión de libros?":"Imprenta","¿Qué periodo histórico siguió a la Edad Media?":"Edad Moderna",
+"¿Cuánto es 7 × 8?":"56","¿Cuánto es 144 ÷ 12?":"12","¿Cuántos lados tiene un pentágono?":"5","¿Cuál es la mitad de 50?":"25","¿Cuánto es 15 + 27?":"42","¿Qué figura tiene tres lados?":"Triángulo","¿Cuánto es 9²?":"81","¿Cuál es el perímetro de un cuadrado de lado 5?":"20","¿Qué número es primo: 9, 11 o 15?":"11","¿Cuánto es 1000 − 375?":"625"
+};
+
+let data=JSON.parse(localStorage.getItem("quizverse2")||"null")||{
+name:"Jugador",coins:100,streak:0,lastLogin:null,protectors:1,level:1,xp:0,correct:0,answered:0,bestScore:0,bestAnswerStreak:0,answerStreak:0,iq:0,
+helps:{hint:1,fifty:1,time:1,swap:1,life:0},achievements:[]
+};
+let currentCat="",questions=[],qi=0,score=0,lives=3,timer=20,timerId=null,roundCorrect=0,used=false;
+
+function save(){localStorage.setItem("quizverse2",JSON.stringify(data));updateTop();renderProfile()}
+function updateTop(){document.getElementById("coins").textContent=data.coins;document.getElementById("streak").textContent=data.streak;document.getElementById("iq").textContent=data.iq}
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");if(id==="home")renderCats();if(id==="profile")renderProfile();if(id==="store")renderShop()}
+function renderCats(){
+ const el=document.getElementById("categories");el.innerHTML="";
+ Object.keys(categories).forEach(c=>{let b=document.createElement("button");b.className="card cat";b.innerHTML=`${c}<b>${c}</b><small>10 preguntas · Jugar ahora</small>`;b.onclick=()=>start(c);el.appendChild(b)});
+ document.getElementById("loginNotice").innerHTML=`🔥 Racha diaria: <b>${data.streak} días</b> · 🪙 ${data.coins} monedas · <button class="secondary" onclick="show('store')">Abrir tienda</button>`;
+}
+function dailyLogin(){
+ const today=new Date().toISOString().slice(0,10);
+ if(data.lastLogin!==today){
+   if(data.lastLogin){
+     let last=new Date(data.lastLogin), now=new Date(today);
+     let days=Math.round((now-last)/86400000);
+     if(days===1){data.streak++}
+     else if(days>1){
+       if(data.protectors>0){data.protectors--;data.streak++}
+       else data.streak=1;
+     }
+   }else data.streak=1;
+   data.lastLogin=today;
+   if(data.streak===1000){data.helps.hint+=10;data.helps.fifty+=10;data.helps.time+=10;data.helps.swap+=10;data.helps.life+=10;alert("👑 ¡1000 DÍAS DE RACHA! Has recibido 10 de cada ayuda.");}
+   save();
+ }
+}
+function start(cat){dailyLogin();currentCat=cat;questions=categories[cat].map(q=>({q,opts:[...options[q]],a:correct[q]})).sort(()=>Math.random()-.5);qi=0;score=0;lives=3;roundCorrect=0;show("quiz");nextQuestion()}
+function nextQuestion(){
+ if(qi>=10||lives<=0){finish();return}
+ used=false;let x=questions[qi];document.getElementById("qcat").textContent=currentCat;document.getElementById("qnum").textContent=qi+1;document.getElementById("question").textContent=x.q;
+ let opts=x.opts.sort(()=>Math.random()-.5), box=document.getElementById("answers");box.innerHTML="";
+ opts.forEach(o=>{let b=document.createElement("button");b.className="answer";b.textContent=o;b.onclick=()=>answer(b,o);box.appendChild(b)});
+ timer=20;document.getElementById("timer").textContent=timer;document.getElementById("timebar").style.width="100%";clearInterval(timerId);timerId=setInterval(()=>{timer--;document.getElementById("timer").textContent=timer;document.getElementById("timebar").style.width=(timer/20*100)+"%";if(timer<=0){clearInterval(timerId);answer(null,null)}},1000);
+ updateHelpCounts();
+}
+function answer(btn,choice){
+ if(used)return;used=true;clearInterval(timerId);let x=questions[qi], buttons=[...document.querySelectorAll(".answer")];buttons.forEach(b=>b.classList.add("disabled"));
+ data.answered++;
+ if(choice===x.a){if(btn)btn.classList.add("correct");roundCorrect++;data.correct++;data.answerStreak++;data.bestAnswerStreak=Math.max(data.bestAnswerStreak,data.answerStreak);let gained=10+timer;score+=gained;data.coins+=5;data.xp+=10}else{if(btn)btn.classList.add("wrong");buttons.forEach(b=>{if(b.textContent===x.a)b.classList.add("correct")});data.answerStreak=0;lives--;score=Math.max(0,score-5)}
+ data.level=1+Math.floor(data.xp/100);data.iq=Math.min(1000,Math.round((data.correct/Math.max(1,data.answered))*1000));
+ data.bestScore=Math.max(data.bestScore,score);save();
+ document.getElementById("lives").textContent=lives;document.getElementById("qstreak").textContent=data.answerStreak;
+ setTimeout(()=>{qi++;nextQuestion()},900);
+}
+function useHelp(type){
+ if(used)return;
+ let cost={hint:30,fifty:40,time:35,swap:50}[type];
+ if(data.helps[type]<=0){if(data.coins<cost){alert("No tienes suficientes monedas.");return}data.coins-=cost;data.helps[type]++;save()}
+ if(type==="hint"){let x=questions[qi],bs=[...document.querySelectorAll(".answer")].filter(b=>b.textContent!==x.a&&!b.classList.contains("disabled"));if(bs.length)bs[Math.floor(Math.random()*bs.length)].style.visibility="hidden"}
+ if(type==="fifty"){let x=questions[qi],bs=[...document.querySelectorAll(".answer")].filter(b=>b.textContent!==x.a&&!b.classList.contains("disabled"));bs.slice(0,2).forEach(b=>b.style.visibility="hidden")}
+ if(type==="time"){timer=Math.min(30,timer+10);document.getElementById("timer").textContent=timer}
+ if(type==="swap"){qi++;nextQuestion()}
+ data.helps[type]--;save();updateHelpCounts();
+}
+function updateHelpCounts(){["hint","fifty","time","swap"].forEach(t=>document.getElementById(t+"Count").textContent=data.helps[t])}
+function finish(){
+ clearInterval(timerId);let earned=roundCorrect*5+Math.floor(score/20);data.coins+=earned;data.iq=Math.min(1000,Math.round((data.correct/Math.max(1,data.answered))*1000));save();
+ document.getElementById("resultTitle").textContent=lives>0?"🎉 ¡Partida terminada!":"💔 ¡Se acabaron las vidas!";
+ document.getElementById("resultText").textContent=`Acertaste ${roundCorrect} de 10 preguntas en ${currentCat}.`;
+ document.getElementById("resScore").textContent=score;document.getElementById("resIQ").textContent=data.iq+"/1000";document.getElementById("resCoins").textContent="+"+earned;
+ show("result");
+}
+function retry(){start(currentCat)}
+function endQuiz(){clearInterval(timerId);show("home")}
+function renderProfile(){
+ document.getElementById("playerName").textContent=data.name;document.getElementById("level").textContent=data.level;document.getElementById("xp").textContent=data.xp;document.getElementById("pStreak").textContent=data.streak+" días";document.getElementById("protectors").textContent=data.protectors;document.getElementById("pIQ").textContent=data.iq+"/1000";document.getElementById("correctTotal").textContent=data.correct;document.getElementById("answeredTotal").textContent=data.answered;document.getElementById("bestScore").textContent=data.bestScore;document.getElementById("bestAnswerStreak").textContent=data.bestAnswerStreak;
+ let a=[["🔥","Primera racha","Inicia sesión 1 día",data.streak>=1],["🔥🔥","Racha de 7","Alcanza 7 días",data.streak>=7],["🎯","10 aciertos","Consigue 10 respuestas correctas",data.correct>=10],["🧠","Índice 500","Alcanza 500 de Índice Quiz",data.iq>=500],["👑","1000 días","Alcanza la racha legendaria",data.streak>=1000]];
+ document.getElementById("achievements").innerHTML=a.map(x=>`<div class="card achievement"><span>${x[0]} <b>${x[1]}</b><br><small>${x[2]}</small></span><span>${x[3]?"✅":"🔒"}</span></div>`).join("");
+}
+const shopItems=[
+["hint","💡 Pista","Elimina una respuesta incorrecta",30],["fifty","❌❌ 50/50","Elimina dos respuestas incorrectas",40],["time","⏱️ Tiempo extra","Añade 10 segundos",35],["swap","🔄 Cambiar pregunta","Salta a otra pregunta",50],["life","❤️ Vida extra","Recupera una vida durante una partida",80],["protector","🛡️ Protector de racha","Protege un día de racha",120]
+];
+function renderShop(){
+ document.getElementById("shop").innerHTML=shopItems.map(i=>`<div class="card"><h3>${i[1]}</h3><p class="muted">${i[2]}</p><b>🪙 ${i[3]}</b><button class="primary" onclick="buy('${i[0]}',${i[3]})">Comprar</button></div>`).join("");
+}
+function buy(type,cost){
+ if(data.coins<cost){alert("No tienes suficientes monedas.");return}
+ data.coins-=cost;if(type==="protector")data.protectors++;else data.helps[type]++;save();renderShop();
+}
+dailyLogin();updateTop();renderCats();
+</script>
+</body>
+</html>
